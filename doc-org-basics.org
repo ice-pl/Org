@@ -1,0 +1,100 @@
+#+TITLE: Org Mode Basics In Doom Emacs
+#+DESCRIPTION: An org document to demonstrate org mode on video.
+#+AUTHOR: PD
+
+* A New Headline
+** Level 2
+*** Level 3
+**** Level 4
+***** Level 5
+****** Level 6
+** Rotate current subtree between states: TAB
+** Rotate entire buffer between states: S-TAB
+** close (fold) the tree: zc
+** open (unfold) the tree: zo
+** open (unfold) the tree and subtrees: zO
+** fold everything: zM
+** unfold everything: zR
+* Getting Started i Org Mode
+Read org mode manual with M-x org-info (Alt).
+** org-toggle-heading: SPC-m-h
+** org-toggle-item: SPC-m-i
++ Unordered list item one
++ Unordered list item two
+- You can use dash instead of +
+- Anoher list item.
+1. Ordered list item one.
+2. Ordered list item two.
+* Motion
+** move left/dow/up/right: h/j/k/l
+** next/prev heading: gj/gk OR CTRL-j/k
+** move parent/child element: gh/gl
+* Structure Editing
+** insert new heading after subtree: CTRL-RET
+** promote/demote heading: M-h/l OR M-LEFT/RIGHT
+** promote/demote current subtree: M-S-h/l OR M-S-LEFT/RIGHT
+** move subtree/list item up/down: M-j/k
+** move list item up/down but not subtree: M-S-j/k
+* Some advanced editing thanks to Evil Mode!
+** select an element: vae
+** delete an element: dae
+** select a subtree: vaR
+** delete subtree: daR
+** yank subtree: yiR
+* Insert Snippets
+** SPC-i-s
+*** bang: #!/usr/bin/env bash
+*** Insert a license : pick a free license
+*** current time: Mon Jun 14 15:57:56 2021
+*** pi:
+* TODO
+** TODO example one
+** TODO example two
+** TODO example three
+** To remove TODO: S-LEFT
+** togle the TODO state: SPACE-m-t OR S-LEFT/RIGHT
+** togle the TODO keyword set: C-S-LEFT/RIGHT
+** org-schedule: SPACE-m-d-s
+SCHEDULED: <2021-06-14 pon 16:00-18:00>
+* To creat a checkbox: - [ ] [0/3] [0%]
+- [ ] eggs
+- [ ] milk
+- [ ] beer: change with: CTRL-c CTRL-c or RET
+** Move this file to front of agenda: CTRL-c-[
+** Org-agenda: SPACE-o-A (q to QUIT)
+* Tables
+** Creating a table
+*** just start typing | Name | Phone | Age |
+*** Go to foward/backward by cell: TAB/SHIFT-TAB
+*** Make org table headline: SPACE m b -
+*** Duplicate a field in the cell below: SHIFT-RET
+
+|--------+------------+--------------+-------+------|
+| One    |            | Two          | Three | Four |
+|--------+------------+--------------+-------+------|
+| A word |            | Another word |       |      |
+|        | new column | Another word |       |      |
+|        |            |              |       |      |
+|        |            |              |       |      |
+|--------+------------+--------------+-------+------|
+
+** Table motion
+*** Move current row UP: M-k
+*** Move current row DOWN: M-j
+*** Move current column LEFT: M-h
+*** Move current column RIGHT: M-l
+*** Insert new column: M-S-l
+*** Delete current column: M-Sh
+*** Insert new row: M-S-j
+*** Delete current row: M-S-k
+
+#+begin_src emacs-lisp
+(custom-set-faces
+ '(org-level-1 ((t (:inherit outline-1 :height 1.4'))))
+ '(org-level-2 ((t (:inherit outline-2 :height 1.3'))))
+ '(org-level-3 ((t (:inherit outline-3 :height 1.2'))))
+ '(org-level-4 ((t (:inherit outline-4 :height 1.1'))))
+ '(org-level-5 ((t (:inherit outline-5 :height 1.0'))))
+ )
+#+end_src
+Dele

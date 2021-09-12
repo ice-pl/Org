@@ -1,0 +1,485 @@
+#+TITLE: Arch Linux Installation
+#+DESCRIPTION: An org document to show how to install Arch Linux fro terminal.
+#+AUTHOR: PD
+
+* STAGE 1
+
+** BASIC INSTALLATION
+
+*** keyboard layout
+ls /usr/share/kbd/keymaps/**/*.map.gz | grep pl
+loadkeys pl
+
+*** internet connection check
+ping google.com
+
+*** update system clock
+timedatectl set-ntp true
+timedatectl status
+
+*** partitioning
+fdisk -l
+
+*** create new empty DOS partiion table
+fdisk /dev/sda
+# option "o"
+# add new partition - option "n"
+# primary - option "p"
+# size +2G
+# add new partition - option "n"
+# primary - option "p"
+# size rest of disk - option default
+# change a partitions types - option "t"
+# partion number: 1
+# list partions types: "L"
+# swap: "82"
+# change a partitions types - option "t"
+# partion number: 2
+# list partions types: "L"
+# linux: "83"
+# toggle a bootable flag: "a"
+# partion number: 2
+# write: "w"
+
+*** format the partitions
+mkswap /dev/sda1
+mkfs.ext4 /dev/sda2
+
+*** enable swap partion
+swapon /dev/sda1
+*** mount file system
+mount /dev/sda2 /mnt
+
+*** install linux
+# pacstrap /mnt base linux linux-firmware
+pacstrap /mnt base linux-lts linux-lts-headers linux-firmware
+
+*** generate fstab file
+genfstab -U /mnt >> /mnt/etc/fstab
+*** change root into the new system
+arch-chroot /mnt
+
+*** set timezone
+ln -sf /usr/share/zoneinfo/Europe/Warsaw /etc/localtime
+hwclock --systohc
+
+*** install vim
+pacman -S vim
+
+*** set localization
+vim /etc/locale.gen
+# uncoment en_US.UTF-8 UTF-8
+# uncoment pl_PL.UTF-8 UTF-8
+locale-gen
+
+*** create hostname file
+vim /etc/hostname
+# add in frist line; save and exit
+arch-vbox
+
+*** create localhost
+vim /etc/hosts
+# add this lines 
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	arch-vbox.localdomain	arch-vbox
+
+*** install newtwork manager
+pacman -S networkmanager
+systemctl enable NetworkManager
+
+*** set root password
+passwd
+
+*** grub (if mbr)
+pacman -S grub os-prober
+grub-install /dev/sda
+# edit /etc/default/grub and uncoment or add
+GRUB_DISABLE_OS_PROBER=false
+grub-mkconfig -o /boot/grub/grub.cfg
+
+*** grub (if uefi)
+pacman -S efibootmgr dosfstools mtools
+mkdir /boot/EFI
+mount /dev/sda1 /boot/EFI
+grub-install --target=x86_64-efi --bootloader-id=grub_uefi --recheck
+# edit /etc/default/grub and uncoment or add
+GRUB_DISABLE_OS_PROBER=false
+grub-mkconfig -o /boot/grub/grub.cfg
+
+*** EXIT BASIC INSTALLATION
+exit
+umount -l /mnt
+shoutdown now
+
+** POST BASIC INSTALLATION
+
+*** sudo
+pacman -S sudo
+EDITOR=vim visudo
+# uncoment %wheel ALL=(ALL) ALL
+
+*** add user
+useradd -m archie
+passwd archie
+
+*** add user to groups
+usermod -aG wheel,audio,video,optical,storage archie
+*** install base developers packages
+pacman -S base-devel
+*** install pacman mirrorlist updater
+pacman -S reflector
+*** install git
+pacman -S git
+*** install wget
+pacman -S wget 
+*** install man and choose mandoc
+pacman -S man
+
+*** EXIT POST BASIC INSTALLATION (into login)
+exit
+
+** POST BASIC CONFIGURATION
+
+*** switch kernel (if necessary)
+pacman -S linux-lts linux-lts-headers
+cd /
+find . -name "arch.conf"
+vim /usr/share/systemd/bootctl/arch.conf
+**** change
+# - linux   /vmlinuz-linux
+# - initrd  /initramfs-linux.img
+#  ↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓↓
+# + linux   /vmlinuz-linux-lts
+# + initrd  /initramfs-linux-lts.img
+**** check
+uname -r
+
+
+
+
+
+* STAGE 2
+
+** MAIN INSTALLATION
+# login as normal user
+
+*** install yay
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si
+cd
+rm -rf yay
+
+*** audio driver
+sudo pacman -S alsa-utils
+sudo pacman -S pulseaudio
+
+*** xorg
+sudo pacman -S xorg xorg-xinit
+
+*** video driver
+# !!! only one driver !!!
+**** drivers for real hardware
+sudo pacman -S xf86-video-intel
+sudo pacman -S xf86-video-amdgpu
+sudo pacman -S nvidia nvidia-utils nvidia-settings
+**** virtualbox driver
+sudo pacman -S xf86-video-qxl
+
+*** compositor
+yay -S picom-git
+mkdir .config/picom
+cp /etc/xdg/picom.conf.example .config/picom/picom.conf
+vim .config/picom/picom.conf
+# comment: vsync = true
+# - backend = "xrender";
+# + backend = "glx"; there is a misspelling with 'glx' (change single quote to double and add semicolon at end ;)
+
+*** desktop environment installation
+**** awesomewm
+sudo pacman -S awesome
+mkdir -p ~/.config/awesome
+cp /etc/xdg/awesome/rc.lua ~/.config/awesome/
+git clone https://github.com/lcpz/awesome-freedesktop.git ~/.config/awesome/freedesktop
+
+**** dwm
+git clone https://git.suckless.org/dwm
+git clone https://git.suckless.org/st
+
+**** bspwm
+sudo pacman -S bspwm
+mkdir .config/bspwm
+cp /usr/share/doc/bspwm/examples/bspwmrc ./config/bspwm/
+***** keyboard shortcuts
+sudo pacman -S sxhkd
+mkdir .config/sxhkd
+cp /usr/share/doc/bspwm/examples/sxhkdrc ./config/sxhkd/
+
+**** qtile
+# in vbox !!! __uncheck__ !!! Enable 3D Acceleration
+sudo pacman -S python-setuptools
+sudo pacman -S qtile
+mkdir .config/qtile
+cp /usr/share/doc/qtile/default_config.py .config/qtile/config.py
+
+** POST MAIN INSTALLATION
+
+# VirtualBOX USEFULL - mount the shared folder from the host to your ~/shared directory (first in home directory: mkdir shared )
+alias vshared="sudo mount -t vboxsf shared ~/shared"
+
+*** shell "goodies" installation
+**** simple finding files
+sudo pacman -S mlocate
+sudo updatedb
+
+**** exa (instead ls)
+sudo pacman -S exa
+**** show last installed packages - expac
+sudo pacman -S expac
+**** starship prompt
+sudo pacman -S starship
+
+**** emoji
+sudo pacman -S unicode-emoji
+yay -S noto-fonts-emoji-apple
+yay -S ttf-font-awesome
+yay -S siji-git
+
+**** fonts
+yay -S ttf-ms-fonts
+yay -S ttf-mac-fonts
+
+yay -S $(yay -Ssq menlo | grep -E "ttf|otf")
+yay -S $(yay -Ssq monaco | grep -E "ttf|otf")
+
+yay -S 3270-fonts
+
+yay -S nerd-fonts-roboto-mono
+yay -S nerd-fonts-hack
+yay -S nerd-fonts-dejavu-complete
+yay -S nerd-fonts-fira-code
+yay -S nerd-fonts-inconsolata
+
+*** change bash to zsh
+sudo pacman -S zsh
+chsh -s $(which zsh) archie
+
+**** zsh plugins
+sudo pacman -S zsh-syntax-highlighting
+sudo pacman -S zsh-history-substring-search
+sudo pacman -S zsh-autosuggestions
+sudo pacman -S pkgfile
+sudo pacman -S lsb-release
+
+*** other terminal program
+**** ranger
+sudo pacman -S ranger
+
+***** preview in ranger
+# from grihub page:= sudo pip3 install ueberzug
+# NEVER use sudo with PIP or PIP3 because can cause ERRORS in pacman
+#
+# If you must use pip, use a virtual environment,
+# or pip install --user to avoid conflicts with packages in /usr.
+# It is always preferred to use pacman to install software.
+# source:
+# wiki.archlinux.org
+# e.g.:	pip install pdfCropMargins --user --upgrade
+
+****** images
+sudo pacman -S ueberzug
+****** video
+sudo pacman -S mpv
+****** pdf
+sudo pacman -S qpdfview
+****** doc
+sudo pacman -S catdoc
+****** docx
+sudo pacman -S pandoc
+****** mp3 info
+sudo pacman -S mediainfo
+****** archives
+sudo pacman -S atool
+
+***** fzf
+sudo pacman -S fzf
+***** trash
+sudo pacman -S trash-cli
+***** autojump
+git clone git://github.com/wting/autojump.git
+
+**** neofetch
+sudo pacman -S neofetch
+**** htop
+sudo pacman -S htop
+**** simple terminal calculator
+sudo pacman -S bc
+**** package conatin better grep caled agrep
+sudo pacman -S tre
+**** big subtitles
+sudo pacman -S figlet
+**** synchronizing files
+sudo pacman -S rsync
+
+**** neovim
+sudo pacman -S neovim
+
+***** required for youcompleteme
+sudo pacman -S cmake
+sudo pacman -S go
+sudo pacman -S npm
+sudo pacman -S jdk11-openjdk
+
+**** alternative man
+***** tldr
+sudo pacman -S tldr
+***** cheat
+yay -S cheat
+***** bropages
+cargo install bropages
+
+
+*** EXIT POST BASIC INSTALLATION (into login)
+exit
+
+
+
+
+
+* STAGE 3
+
+** SUBSIDIARY INSTALLATION
+
+*** policykit (allows unprivileged processes to speak to previleged processes)
+yay -S lxpolkit
+*** store credentials data from webbrowsers
+sudo pacman -S gnome-keyring
+
+*** xfce packages
+sudo pacman -S exo
+sudo pacman -S xfce4-settings
+sudo pacman -S xfce4-power-manager
+sudo pacman -S $(pacman -Ssq thunar)
+sudo pacman -S gvfs             #mounting_and_unmounting_removable_media_in_thunar
+yay -S thunar-shares-plugin
+
+*** qt5 packages
+sudo pacman -S qt5ct
+sudo pacman -S kvantum-qt5
+sudo pacman -S qt5-gsettings
+yay -S qt5-styleplugins
+
+*** pamac
+yay -S pamac-aur
+yay -S archlinux-appstream-data-pamac
+
+*** menu
+sudo pacman -S jgmenu
+
+*** applets
+yay -S pa-applet-git
+sudo pacman -S network-manager-applet
+sudo pacman -S blueman
+sudo pacman -S cbatticon
+
+*** screen locker
+sudo pacman -S light-locker
+*** notifications
+sudo pacman -S dunst
+*** printer configuration
+sudo pacman -S system-config-printer
+*** common components for multiple GTK required to implement cross-DE solutions
+sudo pacman -S xapp
+
+*** other graphical program
+**** terminal emulator
+sudo pacman -S lxterminal
+**** rofi
+sudo pacman -S rofi
+**** dmenu
+sudo pacman -S dmenu
+
+**** wallpaper
+sudo pacman -S nitrogen
+sudo pacman -S feh
+
+**** screenshots
+sudo pacman -S scrot
+**** image viewer
+sudo pacman -S imv
+**** pdf viewer
+sudo pacman -S zathura
+**** arandr
+sudo pacman -S arandr
+**** clipboard tool
+sudo pacman -S xclip
+**** color pick
+yay -S colorpicker
+
+*** icons for graphical applications (menu)
+yay -S papirus-maia-icon-theme-git
+
+*** mouse scrool speed
+# after install add symlinks to
+# e.g.: sudo ln -s ~/bin/autostart-imwheel.sh /etc/profile.d/autostart-imwheel.sh
+sudo pacman -S imwheel
+
+** POST SUBSIDIARY INSTALLATION
+
+*** copy config files into ~/
+.bashrc
+.dir_colors
+.profile
+.xinitrc
+.Xmodmap
+.xprofile
+.zshrc
+
+*** set users dir
+pacman -S xdg-user-dirs
+xdg-user-dirs-update
+
+*** start system
+**** display manager installation (if necessary)
+***** lightdm
+sudo pacman -S lightdm
+sudo pacman -S lightdm-gtk-greeter
+sudo systemctl enable lightdm
+
+
+
+
+
+* STAGE 4
+
+** OTHER STUFF
+
+
+*** browser
+sudo pacman -S firefox
+*** compare files
+sudo pacman -S meld
+*** video recorder
+sudo pacman -S simplescreenrecorder
+
+*** graphical package manager
+yay -S bauh
+
+**** bauh dependencies
+sudo pacman -S flatpak
+yay -S snapd
+yay -S snapd-glib
+# enable servic:= esudo systemctl enable --now snapd.socket
+
+*** synchronization
+# do NOT install frme the site because it installs to the home directory
+# install from bauh instead (e.g.: flatpak)
+free file sync
+
+*** pdf-crop-margins required for different pdf scripts
+pip3 install pdfCropMargins --user --upgrade
+*** latex (also have some subprograms required for different pdf scripts)
+sudo pacman -S $(pacman -Ssq texlive)
+*** set empty password in chrome and similar browsers
+rm ~/.local/share/keyrings/*
